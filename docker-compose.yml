@@ -1,0 +1,67 @@
+version: '3.3'
+services:
+  mongodb:
+    image: mongo:3.2
+    volumes:
+      - mongodb:/data/db
+    networks:
+      - backnet
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports: 
+      - 5672:5672
+    # environment:
+    #   - RABBITMQ_LOGS=/var/log/rabbitmq/rabbit.log
+    depends_on:
+      - mongodb
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq/
+    networks:
+      - backnet
+  
+  crawler:
+    build: ../Otus-DevOps-2022-02-crawler-project/search_engine_crawler/
+    restart: always
+    #image: johntelegin/crawler:1.02
+    
+    # environment:
+    #   - MONGO=mongodb
+    #   - MONGO_PORT=27017
+    #   - RMQ_HOST=rabbitmq
+    #   - RMQ_QUEUE=urls
+    #   - RMQ_USERNAME=guest
+    #   - RMQ_PASSWORD=guest
+    #   - CHECK_INTERVAL=20
+    #   - EXCLUDE_URLS=".*github.com"
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - backnet
+
+  ui:
+    build: ../Otus-DevOps-2022-02-crawler-project/search_engine_ui/
+  #  image: johntelegin/crawler-ui:1.02
+    ports:
+      - 8000:8000/tcp
+    depends_on:
+      - mongodb
+    networks:
+      - backnet
+    # environment:
+    #   - MONGO=mongodb
+    #   - MONGO_PORT=27017
+
+volumes:
+  mongodb:
+  rabbitmq:
+
+networks:
+  backnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.2.0/24
