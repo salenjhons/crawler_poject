@@ -12,8 +12,6 @@ services:
     container_name: 'rabbitmq'
     ports: 
       - 5672:5672
-    # environment:
-    #   - RABBITMQ_LOGS=/var/log/rabbitmq/rabbit.log
     depends_on:
       - mongodb
     volumes:
@@ -25,16 +23,6 @@ services:
     build: ../Otus-DevOps-2022-02-crawler-project/search_engine_crawler/
     restart: always
     #image: johntelegin/crawler:1.02
-    
-    # environment:
-    #   - MONGO=mongodb
-    #   - MONGO_PORT=27017
-    #   - RMQ_HOST=rabbitmq
-    #   - RMQ_QUEUE=urls
-    #   - RMQ_USERNAME=guest
-    #   - RMQ_PASSWORD=guest
-    #   - CHECK_INTERVAL=20
-    #   - EXCLUDE_URLS=".*github.com"
     depends_on:
       - mongodb
       - rabbitmq
@@ -50,9 +38,6 @@ services:
       - mongodb
     networks:
       - backnet
-    # environment:
-    #   - MONGO=mongodb
-    #   - MONGO_PORT=27017
 
 volumes:
   mongodb:
