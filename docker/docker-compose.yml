@@ -1,0 +1,97 @@
+version: '3.3'
+services:
+  mongodb:
+    image: mongo:3.2
+    volumes:
+      - mongodb:/data/db
+    networks:
+      - backnet
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports: 
+      - 5672:5672
+    depends_on:
+      - mongodb
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq/
+    networks:
+      - backnet
+  
+  crawler:
+    build: ../docker/search_engine_crawler/
+    restart: always
+    #image: johntelegin/crawler:1.02
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - backnet
+
+  ui:
+    build: ../docker/search_engine_ui/
+  #  image: johntelegin/crawler-ui:1.02
+    ports:
+      - 8000:8000/tcp
+    depends_on:
+      - mongodb
+    networks:
+      - backnet
+
+  # prometheus:
+  #  # image: ${USERNAME}/prometheus
+  #   build: ../monitoring/prometheus/
+  #   ports:
+  #     - '9090:9090'
+  #   volumes:
+  #     - prometheus_data:/prometheus
+  #   command: # Передаем доп параметры в командной строке
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--storage.tsdb.retention=1d' # Задаем время хранения метрик в 1 день
+  #   networks:
+  #     - backnet
+  
+  prometheus:
+    image: johntelegin/prometheus
+    #build: ../monitoring/prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - prometheus_data:/prometheus
+    command: # Передаем доп параметры в командной строке
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention=1d' # Задаем время хранения метрик в 1 день
+    networks:
+      - backnet
+
+  node-exporter:
+    image: prom/node-exporter:v0.15.2
+    user: root
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+    networks:
+      - backnet
+
+  
+
+volumes:
+  mongodb:
+  rabbitmq:
+  prometheus_data:
+
+networks:
+  backnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.2.0/24
